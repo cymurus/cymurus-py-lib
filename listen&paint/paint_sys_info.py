@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 # 自己写的
-from ytool import now_stamp
+from cymurus.misc import now_stamp
 
 # 第三方库
 import pygal

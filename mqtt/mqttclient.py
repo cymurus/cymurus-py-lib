@@ -1,5 +1,7 @@
+# coding=utf-8
+
 import paho.mqtt.client as mqtt
-# import ssl
+import ssl
 
 class MqttClient(object):
 
@@ -16,9 +18,9 @@ class MqttClient(object):
 
   def tls_set(self):
     if not self.client:
-      return
+      raise RuntimeError('Connection is None.')
     if not self.ca_certs:
-      return
+      raise RuntimeError('No Certificate is given.')
     self.client.tls_set(
       ca_certs=self.ca_certs, 
       certfile=None, 
@@ -29,22 +31,29 @@ class MqttClient(object):
     )
   # tls_set
 
-  def set_callback(self, cbname, cb):
-    slots = [
-      'on_message',
-      'on_connect',
-      'on_log',
-      'on_disconnect',
-      'on_publish',
-      'on_subscribe',
-      'on_unsubscribe',
-      'on_message_print',
-    ]
-    if cbname not in slots:
-      raise RuntimeError('Unsupported callback: %s' % cbname)
-    # not slots
-    setattr(self.client, cbname, cb)
-  # set callback
+  # this is code is fucking ugly
+  # def set_callback(self, cbname, cb):
+  #   slots = [
+  #     'on_message',
+  #     'on_connect',
+  #     'on_log',
+  #     'on_disconnect',
+  #     'on_publish',
+  #     'on_subscribe',
+  #     'on_unsubscribe',
+  #     'on_message_print',
+  #   ]
+  #   if cbname not in slots:
+  #     raise RuntimeError('Unsupported callback: %s' % cbname)
+  #   # not slots
+  #   setattr(self.client, cbname, cb)
+  # # set callback
+
+  def __setattr__(self, name, value):
+    if not hasattr(self.client, name):
+      raise RuntimeError('unkown "%s" of %s' % (name,type(self.client)))
+    setattr(self.client, name, value)
+  # __settattr__
 
   def subscribe(self, topic, qos=0):
     # subscribe(topic, qos=0)

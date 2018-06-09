@@ -69,11 +69,7 @@ class MailSender(object):
 # MailSender
 
 if __name__ == '__main__':
-  ms = MailSender('192.200.4.13', 1352)
-  ms.login('39847@sangfor.com', 'password')
-  msg = ms.make_message('Test title', 'Test body')
-  ms.send_mail('88888@sangfor.com', '39847@sangfor.com', msg)
   # ms = MailSender('smtp.qq.com', 465)
-  # ms.login('cymurus@qq.com', 'dettmwuklnpbbfhf')
+  # ms.login('cymurus@qq.com', '')
   # msg = ms.make_message('Test title', 'Test body')
   # ms.send_mail('cymurus@qq.com', 'cymurus@qq.com', msg)

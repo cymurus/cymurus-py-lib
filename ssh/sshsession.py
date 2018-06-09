@@ -1,8 +1,5 @@
 import paramiko
 
-'''
-  SSH会话类
-'''
 class SshSession(object):
 
   def __init__(self, host, port, username, passwd):

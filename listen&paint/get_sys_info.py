@@ -12,8 +12,8 @@ import re
 # import pygal
 
 # 本地开发的库
-from ytool.session.sshsession import SshSession
-from ytool import now
+from cymurus.ssh.sshsession import SshSession
+from cymurus.misc import now, now_stamp
 
 '''
   每隔 interval 秒，执行一次 cmd，并记录到 out_dir 下的文件中
@@ -23,7 +23,7 @@ from ytool import now
   out_dir 输出目录
   mapper 如果要对 cmd 执行结果进行特殊处理时可以传入一个函数作为该参数
 '''
-def listen(cmd, interval=60, sess=None, out_dir='', mapper=None):
+def listen(cmd_name, cmd, interval=60, sess=None, out_dir='', mapper=None):
   # 参数校验
   if interval not in range(1, MAXINT):
     raise RuntimeError('interval should be an interger in [1, %s].' % str(MAXINT))
@@ -50,8 +50,9 @@ def listen(cmd, interval=60, sess=None, out_dir='', mapper=None):
     # if mapper
 
     # 记录到文件
-    dtime = datetime.now().strftime('%Y%m%d%H%M%S')
-    record(out, out_dir, dtime)
+    dtime = now_stamp()
+    out = ','.join([dtime, out])
+    record(out, out_dir, cmd_name)
 
     print(dtime, out_dir, out)
 
@@ -62,12 +63,12 @@ def listen(cmd, interval=60, sess=None, out_dir='', mapper=None):
 '''
   将数据记录到文件
 '''
-def record(data, path, filename):
+def record(data, path, filename, mode='a'):
   if not os.path.exists(path): 
     os.makedirs(path) 
   # path not exist
   filepath = '/'.join([path, filename])
-  f = open(filepath, 'w')
+  f = open(filepath, mode)
   f.write(data)
   f.close()
 # record
@@ -97,6 +98,7 @@ if __name__ == '__main__':
     t = Thread(
       target=listen,
       args=(
+        cmd_name,
         cmds[cmd_name], 
         60 * 15, sess, 
         './data/%s' % cmd_name, 
