@@ -31,8 +31,26 @@ class MqttClient(object):
     )
   # tls_set
 
-  # this is code is fucking ugly
-  # def set_callback(self, cbname, cb):
+  # this is fucking ugly
+  def set_callback(self, cbname, cb):
+    slots = [
+      'on_message',
+      'on_connect',
+      'on_log',
+      'on_disconnect',
+      'on_publish',
+      'on_subscribe',
+      'on_unsubscribe',
+      'on_message_print',
+    ]
+    if cbname not in slots:
+      raise RuntimeError('Unsupported callback: %s' % cbname)
+    # not slots
+    setattr(self.client, cbname, cb)
+  # set callback
+
+  # # this is fucking stupid
+  # def __setattr__(self, name, value):
   #   slots = [
   #     'on_message',
   #     'on_connect',
@@ -43,17 +61,12 @@ class MqttClient(object):
   #     'on_unsubscribe',
   #     'on_message_print',
   #   ]
-  #   if cbname not in slots:
-  #     raise RuntimeError('Unsupported callback: %s' % cbname)
-  #   # not slots
-  #   setattr(self.client, cbname, cb)
-  # # set callback
-
-  def __setattr__(self, name, value):
-    if not hasattr(self.client, name):
-      raise RuntimeError('unkown "%s" of %s' % (name,type(self.client)))
-    setattr(self.client, name, value)
-  # __settattr__
+  #   if name not in slots: return
+  #   if not hasattr(self, 'client'): return
+  #   if not hasattr(self.client, name):
+  #     raise RuntimeError('unkown "%s" of %s' % (name,type(self.client)))
+  #   setattr(self.client, name, value)
+  # # __settattr__
 
   def subscribe(self, topic, qos=0):
     # subscribe(topic, qos=0)
