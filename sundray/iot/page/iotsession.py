@@ -1,5 +1,6 @@
 #encoding=utf-8
 import requests
+import json
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -83,7 +84,7 @@ class IotSession:
   '''
   the proxy method of self.session.post
   '''
-  def post(self, path, data, headless=False):
+  def _post(self, path, data, headless=False):
     return self.session.post(
       'https://%s%s' % (self.host, path),
       data=data,
@@ -91,6 +92,16 @@ class IotSession:
       verify=False
     )
   #end post
+
+  def post(self, path, data, headless=False):
+    res = self._post(path, data, headless)
+    res = res.text
+    res = json.loads(res)
+    if res['success']:
+      return res['data']
+    else:
+      pass
+  # post
 
 #end class IotSession
 
