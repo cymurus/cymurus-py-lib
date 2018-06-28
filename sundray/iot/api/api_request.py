@@ -7,7 +7,7 @@ import ssl
 
 class ApiRequest(object):
 
-  def __init__(self, host, api_token, auto_get_access_token=False):
+  def __init__(self, host, api_token, auto_get_access_token=True):
     ssl._create_default_https_context = ssl._create_unverified_context
     self.host = host
     self.api_token = api_token

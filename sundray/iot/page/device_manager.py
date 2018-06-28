@@ -1,15 +1,16 @@
 #encoding=utf-8
-from iotsession import IotSession
 import json
 from datetime import datetime
 
-from device_info import DEVICE_INFO
+from .iotsession import IotSession
+from .iot_info import get_device_info
 
 class DeviceManager():
 
   def __init__(self, host, username, passwd, admin_sess=''):
     self.session = IotSession(host, username, passwd, admin_sess)
     self.refresh_cache()
+    self.device_info = get_device_info('device_db')
   #end init
 
   def refresh_cache(self):
@@ -20,6 +21,7 @@ class DeviceManager():
 #*************************************group begin*******************************#
 
   def get_group_id_by_name(self, group_name, key='id'):
+    if isinstance(group_name, int): return group_name
     groups = self.group_cache
     for group in groups:
       if group['name'] == group_name:
@@ -102,14 +104,14 @@ class DeviceManager():
 
   def get_type_id_by_sn(self, sn):
     tmp = sn[:3]
-    for d in DEVICE_INFO.values():
+    for d in self.device_info.values():
       if tmp in d['sn']:
         return d['type_id']
   # get_type_id_by_sn
 
   def list_device(self, type_name, group_name='', keys=['deviceStat', 'deviceID', 'deviceName', 'groupID', 'groupName', 'onlinetime', 'reportTime']):
     devices = []
-    type_id = DEVICE_INFO[type_name]['type_id']
+    type_id = self.device_info[type_name]['type_id']
     if not group_name:
       group_id = 1
     else:
@@ -230,11 +232,98 @@ class DeviceManager():
 
 #*************************************device end*******************************#
 
-#end class IotBaseTool
+#*************************************gateway start*******************************#
+
+  def list_device_active(self, keys=['deviceStat', 'deviceID', 'onlinetime', 'typeName', 'ip', 'mac'], type_ids=['12dacaa9297efad0d3d2cfb2117eb83e', '3351be9e00000028741a888be4f9867a', '3351be9e00000028741a888be4f9867b', '3351be9e00000028741a888be4f9867c', '3965ba212cad84f9f4697f760bac540d', '82e9b2660000000a1b1a47e167bd8b49', 'c14bf866294f8add9d87f6509d39915c', 'fd0324430000002af1314589f9a75341', '9d6ef70e00000007911686740fd49eae']):
+    devices = []
+    msg = json.loads('{"current":1,"rowCount":5000,"search":null,"increase":false,"snKeyword":"","statusKeyword":"all"}')
+    msg['typeIDKeyword'] = type_ids
+    msg = json.dumps(msg)
+    data = {
+      'opr': 'list',
+      'msg': msg
+    }
+    res = self.session.post('/iotp/web/v2/DevicesActivation', data)
+    res = res['rows']
+    for d in res:
+      devices.append({ k:d[k] for k in keys})
+    return devices
+  # list_device_active
+
+  def template(self):
+    templates = []
+    data = {
+      'opr': 'selectCollector',
+      'msg': '{}'
+    }
+    res = self.session.post('/iotp/go/device/template', data)
+    res = res.values()
+    for t in res:
+      if not t: continue
+      for tt in t.values():
+        for ttt in tt:
+          templates.append({
+            'templateID': ttt['templateID'],
+            'model': ttt['model']
+          })
+        # in tag
+      # tags
+    # channel
+    return templates
+  # template
+
+  def get_network(self, keys=['deviceStat', 'deviceID', 'deviceName', 'groupID', 'groupName', 'GW_DNS_MASTER', 'GW_DNS_SLAVE', 'GW_GATEWAY', 'GW_IP', 'GW_MASK', ]):
+    devices = []
+    # 
+    data = {
+      'opr': 'devices_list',
+      'msg': '{"current":1,"rowCount":5000,"search":null,"increase":false,"searchBy":"deviceName","keyword":"","grepByStat":"","operator":"getSNMPGateWay","groupID":1}'
+    }
+    res = self.session.post('/iotp/web/v2/DevicesManagement', data)
+    res = res['rows']
+    for d in res:
+      devices.append({ k:d[k] for k in keys})
+    return devices
+  # get_network
+
+  def get_lora_gateway_network(self, device_name):
+    device_id = self.get_device_id_by_name(device_name)
+    data = {
+      'opr': 'get_config',
+      'msg': ' {"typeID":"9d6ef70e00000007911686740fd49eae","deviceID":"%s","operator":"gatewayConfig"}' % device_id
+    }
+    res = self.session.post('/iotp/web/v2/DevicesManagement', data)
+    return res
+  # get_lora_gateway_network
+
+  def config_lora_gateway(self, device_name, gateway_config={}):
+    device_id = self.get_device_id_by_name(device_name)
+    type_id = self.get_type_id_by_sn(device_id)
+    msg = json.loads('{"devices":[{"typeID":"%s","deviceID":"%s"}]}' % (type_id, device_id))
+    msg['config'] = gateway_config
+    msg = json.dumps(msg)
+    data = {
+      'opr': 'set_config',
+      'msg': msg
+    }
+    res = self.session.post('/iotp/web/v2/DevicesManagement', data)
+    return res
+  # config_lora_gateway
+
+#*************************************gateway end*******************************#
+
+#*************************************collector start*******************************#
+
+
+#*************************************collector end*******************************#
+
+#end class DeviceManager
 
 
 
 if __name__ == '__main__':
   dm = DeviceManager('10.156.163.51', 'admin', 'admin')
   # print(dm.list_device('智能插座'))
-  print(dm.delete_device(['GIK0000003']))
+  # print(dm.delete_device(['GIK0000003']))
+  # print(dm.list_device('智能插座'))
+  # print(dm.config_lora_gateway('GFG7380303', {'GW_IP': '200.200.157.50'}))
